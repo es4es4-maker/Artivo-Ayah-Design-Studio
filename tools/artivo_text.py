@@ -26,13 +26,29 @@ def _get_font(path):
 
 def shape_run(text, path, size):
     """Return (glyph_infos, glyph_positions) shaped by HarfBuzz for `text`.
-    Positions are in integer pixels at `size` px ppem."""
+    Positions are in integer pixels at `size` px ppem.
+
+    Bidi note: HarfBuzz does NOT run the full Unicode bidi algorithm; with
+    guess_segment_properties() it treats a mixed Arabic+digits string as one
+    RTL run and visually REVERSES digit runs (١٢٩ shows as ٩٢١). When digits
+    are present we convert to visual order ourselves (reverse everything,
+    then re-reverse each maximal digit run) and shape that as LTR."""
+    if any('0' <= c <= '9' or '\u0660' <= c <= '\u0669' or '\u06f0' <= c <= '\u06f9' for c in text):
+        import re
+        v = text[::-1]
+        v = re.sub(r'[0-9\u0660-\u0669\u06f0-\u06f9]+', lambda m: m.group(0)[::-1], v)
+        text = v
+        force_dir = 'ltr'
+    else:
+        force_dir = None
     f = _get_font(path)
     font = hb.Font(f['face'])
     font.scale = (size, size)  # -> positions in pixels
     buf = hb.Buffer()
     buf.add_str(text)
     buf.guess_segment_properties()
+    if force_dir:
+        buf.direction = force_dir
     hb.shape(font, buf, {})
     return buf.glyph_infos, buf.glyph_positions
 

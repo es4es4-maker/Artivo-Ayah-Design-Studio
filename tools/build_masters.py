@@ -111,16 +111,19 @@ def build_full(args=None):
     with ProcessPoolExecutor(max_workers=2) as ex:
         for i,res in enumerate(ex.map(_job,jobs)):
             if (i+1)%20==0: print(f'...{i+1}/{len(jobs)}',flush=True)
-    # zips per plate (30 designs each)
+    # zips per plate: 3 parts of 10 designs each (GitHub rejects files >100MB)
     os.makedirs(f'{ROOT}/deliverables/zips',exist_ok=True)
     for pid in range(1,11):
-        z=f'{ROOT}/deliverables/zips/Artivo_D{pid:02d}_30-designs.zip'
-        oldz=f'{ROOT}/deliverables/zips/Artivo_D{pid:02d}_10-designs.zip'
-        with zipfile.ZipFile(z,'w',zipfile.ZIP_DEFLATED) as zz:
-            for v in plate_verses(pid):
-                zz.write(f'{OUT}/D{pid:02d}-{v["key"]}_60x80_300dpi.jpg',f'Artivo_D{pid:02d}-{v["key"]}_60x80cm_300DPI.jpg')
-        if os.path.exists(oldz): os.remove(oldz)
-        print('zip',pid,os.path.getsize(z)//1_000_000,'MB',flush=True)
+        vs = plate_verses(pid)
+        for oldp in (f'{ROOT}/deliverables/zips/Artivo_D{pid:02d}_30-designs.zip',
+                     f'{ROOT}/deliverables/zips/Artivo_D{pid:02d}_10-designs.zip'):
+            if os.path.exists(oldp): os.remove(oldp)
+        for pi in range(3):
+            z=f'{ROOT}/deliverables/zips/Artivo_D{pid:02d}_part{pi+1}.zip'
+            with zipfile.ZipFile(z,'w',zipfile.ZIP_DEFLATED) as zz:
+                for v in vs[pi*10:(pi+1)*10]:
+                    zz.write(f'{OUT}/D{pid:02d}-{v["key"]}_60x80_300dpi.jpg',f'Artivo_D{pid:02d}-{v["key"]}_60x80cm_300DPI.jpg')
+            print('zip',pid,'part',pi+1,os.path.getsize(z)//1_000_000,'MB',flush=True)
     print('FULL BUILD DONE',flush=True)
 
 if __name__ == '__main__':
