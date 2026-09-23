@@ -25,7 +25,7 @@
 <body>
 <div class="wrap">
   <h1>🕌 استوديو آية — التحميل</h1>
-  <p class="sub">١٠٠ تصميم قرآني جاهز للطباعة • ٦٠×٨٠ سم • جودة ٣٠٠ DPI<br>
+  <p class="sub">٣٠٠ تصميم قرآني جاهز للطباعة • ٦٠×٨٠ سم • جودة ٣٠٠ DPI<br>
   قول للمطبعة: <b style="color:#d4af37">«اطبع ٦٠×٨٠ سم — الملفات ٣٠٠ DPI جاهزة»</b></p>
 
   <div class="card" id="approval">
@@ -47,19 +47,19 @@
   </div>
 
   <div class="note">📤 عايز تبعتلي صورة مرجعية؟ <a href="/uploader" style="color:#ffe9a8;font-weight:bold;text-decoration:underline">اضغط هنا للرفع المباشر ⬆</a></div>
-  <div class="note">📌 اضغط على أي ملف زيب أدناه لتحميله مباشرة. كل تصميم فيه ١٠ آيات (١٠ ملفات JPG عالية الجودة).</div>
+  <div class="note">📌 اضغط على أي ملف زيب أدناه لتحميله مباشرة. كل زيب فيه <b>١٠ تصميمات</b> (١٠ ملفات JPG عالية الجودة) — وكل خلفية متقسمة ٣ أجزاء = ٣٠ تصميم. ودي نفس الملفات على <a href="https://github.com/es4es4-maker/Artivo-Ayah-Design-Studio/releases/tag/v1.0" style="color:#ffe9a8;font-weight:bold;text-decoration:underline">GitHub Release v1.0</a>.</div>
 
   <div class="card">
-    <h2>⬇️ ملفات الطباعة (كل تصميم = ١٠ لوحات)</h2>
+    <h2>⬇️ ملفات الطباعة (كل خلفية = ٣٠ تصميم في ٣ أجزاء)</h2>
     <div class="grid" id="zips"></div>
   </div>
 
   <div class="card">
     <h2>🖼️ موك-أبس الإطار الذهبي</h2>
     <div class="grid">
-      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame_part1.zip" download>تحميل الموك-أبس — الجزء ١<span class="sz">ZIP × ١٠٠</span></a>
-      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame_part2.zip" download>تحميل الموك-أبس — الجزء ٢<span class="sz">ZIP × ١٠٠</span></a>
-      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame_part3.zip" download>تحميل الموك-أبس — الجزء ٣<span class="sz">ZIP × ١٠٠</span></a>
+      <a class="dl" id="mk1" download>تحميل الموك-أبس — الجزء ١<span class="sz">ZIP × ١٠٠</span></a>
+      <a class="dl" id="mk2" download>تحميل الموك-أبس — الجزء ٢<span class="sz">ZIP × ١٠٠</span></a>
+      <a class="dl" id="mk3" download>تحميل الموك-أبس — الجزء ٣<span class="sz">ZIP × ١٠٠</span></a>
       <a class="dl" href="previews/MOCKUPS_newstyle_sample.jpg?v=20" target="_blank">معاينة الموك-أبس<span class="sz">JPG</span></a>
     </div>
   </div>
@@ -76,6 +76,7 @@
   <footer>٣٠٠ تصميم • نصوص قرآنية متحقَّق منها حرفًا حرفًا • بدون أي اختلاط أرقام عربية/لاتينية</footer>
 </div>
 <script>
+const REL='https://github.com/es4es4-maker/Artivo-Ayah-Design-Studio/releases/download/v1.0/';
 const names={D01:'ليلة القدر',D02:'شمس السماء',D03:'نسيم الصحراء',D04:'أفق الحرم',D05:'محراب الصباح',D06:'محارة الفجر',D07:'قبة الليل',D08:'واحة النور',D09:'بستان الرحمة',D10:'ديوان الجنة'};
 const z=document.getElementById('zips');
 const IND=['١','٢','٣'];
@@ -83,11 +84,12 @@ for(let i=1;i<=10;i++){
   const id='D'+String(i).padStart(2,'0');
   for(let p=1;p<=3;p++){
     const a=document.createElement('a');
-    a.className='dl';a.href='zips/Artivo_'+id+'_part'+p+'.zip';a.setAttribute('download','');
+    a.className='dl';a.href=REL+'Artivo_'+id+'_part'+p+'.zip';a.setAttribute('download','');
     a.innerHTML='تصميم '+id+' — '+(names[id]||'')+' — جزء '+IND[p-1]+'<span class="sz">ZIP × ١٠</span>';
     z.appendChild(a);
   }
 }
+for(let p=1;p<=3;p++){document.getElementById('mk'+p).href=REL+'Artivo_Mockups_Golden-Frame_part'+p+'.zip';}
 </script>
 </body>
 </html>

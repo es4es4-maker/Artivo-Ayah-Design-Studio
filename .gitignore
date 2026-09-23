@@ -4,3 +4,12 @@ __pycache__/
 proofs/
 out/
 *.log
+var/
+.cache/
+verify_report.md
+previews/_test_*
+previews/proof_*
+# heavy deliverables live in the GitHub release — never re-add to git
+deliverables/masters/
+deliverables/mockups/
+deliverables/zips/
