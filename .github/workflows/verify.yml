@@ -1,0 +1,50 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "فحص كامل (يشمل فحص الزيبات والصور)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  fast:
+    if: ${{ github.event_name != 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: cd tools && npm ci
+      - name: zero-error checks (texts + inventory)
+        run: python3 tools/verify_all.py --fast
+      - name: report
+        if: always()
+        run: cat verify_report.md >> "$GITHUB_STEP_SUMMARY"
+
+  full:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - run: cd tools && npm ci
+      - name: zero-error checks (full + deep decode)
+        run: python3 tools/verify_all.py --deep 12 --fetch-release v1.0
+      - name: report
+        if: always()
+        run: cat verify_report.md >> "$GITHUB_STEP_SUMMARY"
