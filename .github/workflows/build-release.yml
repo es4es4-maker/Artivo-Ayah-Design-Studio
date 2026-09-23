@@ -1,0 +1,53 @@
+name: Build & Upload Release Assets
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to upload assets to'
+        required: true
+        default: 'v1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow numpy uharfbuzz freetype-py opencv-python-headless
+
+      - name: Build 300 print masters + 30 design zips
+        run: python tools/build_masters.py full
+
+      - name: Build 300 mockups + 3 mockup zips
+        run: python tools/build_mockups_lite.py all
+
+      - name: Regenerate SHA256 checksums
+        run: |
+          cd deliverables/zips
+          sha256sum Artivo_*.zip > ../../SHA256SUMS.txt
+          cd ../..
+
+      - name: Run full verification
+        run: python tools/verify_all.py
+
+      - name: Upload all assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: |
+            deliverables/zips/Artivo_*.zip
+            SHA256SUMS.txt
+            verify_report.md
+          fail_on_unmatched_files: true
