@@ -45,3 +45,4 @@ python3 tools/verify_all.py --fetch-release v1.0   # ينزّل الزيبات �
 - الرفع محدود: ٢٥ ميجابايت للطلب، ٢٠ ميجابايت للملف الواحد — والجسم بيتنقل على دفعات (64KB) على ملفات مؤقتة مش في الذاكرة.
 - الملفات بتنزل في `var/uploads/incoming/` (متجاهلة في git).
 - `/status` مقفول إلا بمرور `?token=` مع `ARTIVO_STATUS_TOKEN` في البيئة.
+# Trigger release upload after tag creation
