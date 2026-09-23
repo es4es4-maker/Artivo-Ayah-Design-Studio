@@ -32,10 +32,10 @@ SEPIA = (120, 74, 30)
 GOLD = (240, 214, 140)
 # plate layout: (fx0, fx1, fy0, fy1, ink)
 CFG = {
- 1:(0.08,0.92, 0.16,0.60, SEPIA),   # sepia mosque portrait
+ 1:(0.08,0.92, 0.24,0.60, SEPIA),   # sepia mosque portrait (top cleared below pendant tip 0.225)
  2:(0.10,0.90, 0.40,0.70, GOLD),    # navy portrait, medallion top
  3:(0.44,0.93, 0.24,0.78, SEPIA),   # cream left vine
- 4:(0.08,0.92, 0.225,0.60, GOLD),   # navy, medallion bottom, fleuron top
+ 4:(0.08,0.92, 0.26,0.64, GOLD),    # navy, medallion bottom, fleuron top (cleared both ends)
  5:(0.14,0.86, 0.26,0.78, SEPIA),   # mughal arch
  6:(0.08,0.92, 0.40,0.68, GOLD),    # navy rich, medallion top, rhombus bottom
  7:(0.10,0.90, 0.46,0.80, GOLD),    # charcoal landscape, ring emblem top
