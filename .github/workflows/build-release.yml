@@ -1,5 +1,12 @@
 name: Build & Upload Release Assets
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-release.yml'
+      - 'tools/**'
+      - 'assets/**'
+      - 'deliverables/plates/**'
   workflow_dispatch:
     inputs:
       tag:
