@@ -1,32 +1,26 @@
 #!/usr/bin/env python3
-"""Build 100 print masters (60x80cm @300DPI) + previews from 10 approved plates x 10 verified verses."""
+"""Build 300 print masters (60x80cm @300DPI) + proof thumbs + zips from 10 approved plates x 30 verified verses."""
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from artivo_text import measure, draw_line_centered  # HarfBuzz shaping: full tashkeel
+from artivo_text import measure, draw_line_centered, line_metrics  # HarfBuzz shaping: full tashkeel
 
-ROOT = '/home/user/Artivo-Ayah-Design-Studio'
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLATES = f'{ROOT}/deliverables/plates'
 OUT = f'{ROOT}/deliverables/masters'
-PREV = f'{ROOT}/previews'
+PROOFS = f'{ROOT}/proofs'          # gitignored — proofs must never land in git
 FONT = f'{ROOT}/assets/fonts/NotoNaskhArabic-Regular.ttf'
-os.makedirs(OUT, exist_ok=True); os.makedirs(PREV, exist_ok=True)
+os.makedirs(OUT, exist_ok=True); os.makedirs(PROOFS, exist_ok=True)
 
 VERSES = json.load(open(f'{ROOT}/assets/verses.json'))
 ALL_A = [v for v in VERSES if v['key'].startswith('A')]
-VERSES10 = ALL_A  # legacy alias
-MAIN100 = [v for v in ALL_A if 1 <= int(v['key'][1:]) <= 300]
-EXTRAS = [v for v in ALL_A if int(v['key'][1:]) >= 301]
-assert len(MAIN100) >= 300 and len({v['ref'] for v in ALL_A}) == len(ALL_A), 'need unique verses'
+MAIN300 = [v for v in ALL_A if 1 <= int(v['key'][1:]) <= 300]
+assert len(MAIN300) == 300 and len({v['ref'] for v in ALL_A}) == len(ALL_A), 'need 300 unique verses'
 
 def plate_verses(pid):
     """Thirty distinct verses assigned to plate `pid` (1-based)."""
-    return MAIN100[pid-1::10]
-
-def plate_extra(pid):
-    """Legacy helper (unused)."""
-    return [v for v in EXTRAS if int(v['key'][1:]) - 300 == pid]
+    return MAIN300[pid-1::10]
 
 SEPIA = (120, 74, 30)
 GOLD = (240, 214, 140)
@@ -46,19 +40,30 @@ CFG = {
 DPI300_W, DPI300_H = 7087, 9449  # 60x80cm
 
 # Measured SAFE text bands (top,bottom) for plates with near-text ornaments.
-# Block is centered inside the band and font shrinks until the analytic ink
-# bounding box (ascenders/descenders included) lies fully inside the band.
+# The block is centered inside the band and the font shrinks until the EXACT
+# blit box of every rendered line (same extents draw_line_centered() will
+# paint, padding included) lies fully inside the band. If 12 shrink attempts
+# still fail, the build prints a loud LAYOUT warning and exits non-zero.
 SAFE_BAND = {1:(0.245,0.455), 4:(0.345,0.605), 5:(0.345,0.725), 7:(0.47,0.81)}
-from artivo_text import line_metrics
+
+
+def _line_box(text, size, cx, y_center):
+    """Exact pixel box draw_line_centered() blits for `text` (render_line image extents)."""
+    pad = max(4, int(size * 0.45))
+    asc, desc = line_metrics(FONT, size)
+    w = int(measure(text, FONT, size)) + 2 * pad
+    h = int(asc + desc) + 2 * pad
+    x0 = int(cx - w / 2)
+    y0 = int(y_center - h / 2)
+    return (x0, y0, x0 + w, y0 + h)
+
 
 def _layout_boxes(vtext, caption, plate_id, W, H, zcx, iw, ih, fs_override=None):
-    """Return (lines, fs, boxes, y0). boxes=(x0,y0,x1,y1) pixel boxes incl. asc/desc."""
+    """Return (lines, fs, boxes, y0). boxes=(x0,y0,x1,y1) = exact blit boxes."""
     fx0, fx1, fy0, fy1, ink = CFG[plate_id]
     fs_cap = fs_override if fs_override else int(ih/6.4)
     lines, fs = fit_layout(vtext, int(iw*0.94), int(ih*0.72), fs_cap)
     cap_fs = int(fs*0.42)
-    asc, desc = line_metrics(FONT, fs)
-    asc_c, desc_c = line_metrics(FONT, cap_fs)
     vh = int(len(lines)*fs*1.52) + cap_fs*2
     if plate_id in SAFE_BAND:
         st, sb = SAFE_BAND[plate_id]
@@ -68,13 +73,10 @@ def _layout_boxes(vtext, caption, plate_id, W, H, zcx, iw, ih, fs_override=None)
     y0 = int(cy) - vh//2
     boxes = []
     y = y0
-    from artivo_text import measure as _measure
     for ln in lines:
-        w = _measure(ln, FONT, fs)
-        boxes.append((int(zcx-w/2), y+int(fs/2)-asc, int(zcx+w/2), y+int(fs/2)+desc))
+        boxes.append(_line_box(ln, fs, zcx, y + fs // 2))
         y += int(fs*1.52)
-    cw = _measure(caption, FONT, cap_fs)
-    boxes.append((int(zcx-cw/2), y+int(fs*0.30)-asc_c, int(zcx+cw/2), y+int(fs*0.30)+desc_c))
+    boxes.append(_line_box(caption, cap_fs, zcx, y + int(fs*0.30)))
     return lines, fs, boxes, y0
 
 def fit_layout(text, iw, ih, fontsize_cap):
@@ -108,8 +110,9 @@ def build(plate_id, verse, out_path, proof_path=None):
     zcx = int((fx0 + fx1) / 2 * W)
     iw = int((fx1 - fx0) * W)
     ih = int((fy1 - fy0) * H)
+    warn = None
     # Safe-band enforcement (plates with near-by ornaments):
-    # shrink font until the analytic ink bounding box clears the band.
+    # shrink font until every blit box clears the measured safe band.
     if plate_id in SAFE_BAND:
         st, sb = SAFE_BAND[plate_id]
         fs_cap = int(ih / 6.4)
@@ -119,6 +122,10 @@ def build(plate_id, verse, out_path, proof_path=None):
             if top >= st*H and bot <= sb*H:
                 break
             fs_cap = int(fs_cap * 0.93)
+        else:
+            warn = (f'{verse["key"]} (D{plate_id:02d}): خارج الشريط الآمن حتى بعد 12 محاولة '
+                    f'(top={top / H:.3f}, bot={bot / H:.3f}, band={st}-{sb})')
+            print('LAYOUT WARNING:', warn, flush=True)
     else:
         lines, fs = fit_layout(verse['text'], int(iw*0.94), int(ih*0.72), int(ih/6.4))
         cap_fs = int(fs * 0.42)
@@ -136,24 +143,26 @@ def build(plate_id, verse, out_path, proof_path=None):
     if proof_path:
         pr = out.copy(); pr.thumbnail((520, 700))
         pr.save(proof_path, quality=93)
-    return out.size, fs, len(lines)
+    return out.size, fs, len(lines), warn
 
 def _job(a):
-    pid,v,o,p=a
-    build(pid,v,o,p)
-    return f'D{pid:02d}-{v["key"]}: OK'
+    pid, v, o, p = a
+    *_, warn = build(pid, v, o, p)
+    return warn or ''
 
 def build_full(args=None):
     from concurrent.futures import ProcessPoolExecutor
-    import zipfile, shutil
+    import zipfile
     jobs=[]
     for pid in range(1,11):
         for v in plate_verses(pid):                    # 300 designs: 10 plates x 30 verses
             out=f'{OUT}/D{pid:02d}-{v["key"]}_60x80_300dpi.jpg'
-            proof=f'{PREV}/proof_D{pid:02d}_{v["key"]}.jpg'
+            proof=f'{PROOFS}/proof_D{pid:02d}_{v["key"]}.jpg'
             jobs.append((pid,v,out,proof))
+    warns=[]
     with ProcessPoolExecutor(max_workers=2) as ex:
         for i,res in enumerate(ex.map(_job,jobs)):
+            if res: warns.append(res)
             if (i+1)%20==0: print(f'...{i+1}/{len(jobs)}',flush=True)
     # zips per plate: 3 parts of 10 designs each (GitHub rejects files >100MB)
     os.makedirs(f'{ROOT}/deliverables/zips',exist_ok=True)
@@ -168,13 +177,17 @@ def build_full(args=None):
                 for v in vs[pi*10:(pi+1)*10]:
                     zz.write(f'{OUT}/D{pid:02d}-{v["key"]}_60x80_300dpi.jpg',f'Artivo_D{pid:02d}-{v["key"]}_60x80cm_300DPI.jpg')
             print('zip',pid,'part',pi+1,os.path.getsize(z)//1_000_000,'MB',flush=True)
-    print('FULL BUILD DONE',flush=True)
+    if warns:
+        print(f'\nLAYOUT WARNINGS: {len(warns)} تصميم لم يستقر داخل الشريط الآمن', flush=True)
+        for w in warns:
+            print('  -', w, flush=True)
+    print('FULL BUILD DONE' if not warns else 'FULL BUILD DONE (مع تحذيرات تخطيط)', flush=True)
+    return 1 if warns else 0
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'full':
-        build_full(sys.argv[2:])
-        raise SystemExit(0)
+        raise SystemExit(build_full(sys.argv[2:]) or 0)
     for pid, vk in ((1, 'A001'), (7, 'A092')):
         v = next(x for x in ALL_A if x['key'] == vk)
-        proto = f'{PREV}/_test_D{pid:02d}_{vk}.jpg'
+        proto = f'{PROOFS}/_test_D{pid:02d}_{vk}.jpg'
         print(pid, vk, build(pid, v, '/tmp/_m.jpg', proto))

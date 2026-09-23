@@ -1,12 +1,32 @@
 #!/usr/bin/env python3
-"""Rebuild all mockups in the newly-approved style: slim modern gold frame on a light wall."""
-import os, math, numpy as np, cv2
+"""Rebuild all mockups in the newly-approved style: slim modern gold frame on a light wall.
+
+Commands:
+  python3 tools/build_mockups_lite.py               # 300 mockups + 3 mockup zips
+  python3 tools/build_mockups_lite.py mockups       # only the 300 mockups
+  python3 tools/build_mockups_lite.py zips          # only Artivo_Mockups_Golden-Frame_part1..3.zip
+  python3 tools/build_mockups_lite.py fetch-masters # download master zips from the release + extract
+
+Zips are packed 100 mockups per part in sorted-filename order (the same split
+the shipped release uses). fetch-masters uses $ARTIVO_RELEASE_TAG (default v1.0).
+"""
+import os
+import sys
+import urllib.request
+import zipfile
+
+import cv2
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MASTERS = os.path.join(ROOT, 'deliverables/masters')
 OUT = os.path.join(ROOT, 'deliverables/mockups')
+ZDIR = os.path.join(ROOT, 'deliverables/zips')
 os.makedirs(OUT, exist_ok=True)
+
+RELEASE_TAG = os.environ.get('ARTIVO_RELEASE_TAG', 'v1.0')
+RELEASE_BASE = f'https://github.com/es4es4-maker/Artivo-Ayah-Design-Studio/releases/download/{RELEASE_TAG}'
 
 def wall(w, h):
     """light warm wall with soft vignette + fine grain"""
@@ -75,10 +95,60 @@ def mockup(master_path, out_path):
     # faint top-sheen on the frame corners (tiny bright ticks)
     img.convert('RGB').save(out_path, quality=92)
 
-if __name__ == '__main__':
+def build_mockups():
     names = sorted(f for f in os.listdir(MASTERS) if f.endswith('.jpg'))
+    if not names:
+        raise SystemExit(f'{MASTERS} فاضي — نفّذ fetch-masters الأول')
     for n in names:
         key = n.split('_60x80')[0]
         out = os.path.join(OUT, f'{key}_mockup.jpg')
         mockup(os.path.join(MASTERS, n), out)
-    print('done', len(names))
+    print('mockups done', len(names))
+
+def build_mockup_zips():
+    """Artivo_Mockups_Golden-Frame_part1..3.zip — 100 mockups per part."""
+    names = sorted(f for f in os.listdir(OUT) if f.endswith('.jpg'))
+    if len(names) != 300:
+        raise SystemExit(f'{OUT} فيه {len(names)} موك-أب بدل 300')
+    os.makedirs(ZDIR, exist_ok=True)
+    for i in range(3):
+        zp = os.path.join(ZDIR, f'Artivo_Mockups_Golden-Frame_part{i+1}.zip')
+        with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED) as zz:
+            for n in names[i*100:(i+1)*100]:
+                zz.write(os.path.join(OUT, n), n)
+        print('mockup zip part', i+1, os.path.getsize(zp)//1_000_000, 'MB')
+
+def fetch_masters():
+    """Download the 30 master zips from the release and extract the 300 JPGs."""
+    os.makedirs(MASTERS, exist_ok=True)
+    os.makedirs(ZDIR, exist_ok=True)
+    got = 0
+    for p in range(1, 11):
+        for part in (1, 2, 3):
+            zn = f'Artivo_D{p:02d}_part{part}.zip'
+            zp = os.path.join(ZDIR, zn)
+            if not os.path.exists(zp):
+                print('download', zn, flush=True)
+                urllib.request.urlretrieve(f'{RELEASE_BASE}/{zn}', zp)
+            with zipfile.ZipFile(zp) as zf:
+                for member in zf.namelist():
+                    base = os.path.basename(member)
+                    if not base.lower().endswith('.jpg'):
+                        continue
+                    # Artivo_D01-A001_60x80cm_300DPI.jpg -> D01-A001_60x80_300dpi.jpg
+                    disk = base.replace('Artivo_', '').replace('_60x80cm_300DPI', '_60x80_300dpi')
+                    with open(os.path.join(MASTERS, disk), 'wb') as out:
+                        out.write(zf.read(member))
+                    got += 1
+    print('masters extracted:', got)
+
+if __name__ == '__main__':
+    cmd = sys.argv[1] if len(sys.argv) > 1 else 'all'
+    if cmd in ('all', 'mockups'):
+        build_mockups()
+    if cmd in ('all', 'zips'):
+        build_mockup_zips()
+    if cmd == 'fetch-masters':
+        fetch_masters()
+    if cmd not in ('all', 'mockups', 'zips', 'fetch-masters'):
+        raise SystemExit(__doc__)
