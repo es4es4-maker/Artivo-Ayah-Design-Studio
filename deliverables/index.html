@@ -57,16 +57,18 @@
   <div class="card">
     <h2>🖼️ موك-أبس الإطار الذهبي</h2>
     <div class="grid">
-      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame.zip" download>تحميل كل الموك-أبس<span class="sz">ZIP</span></a>
+      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame_part1.zip" download>تحميل الموك-أبس — الجزء ١<span class="sz">ZIP × ١٠٠</span></a>
+      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame_part2.zip" download>تحميل الموك-أبس — الجزء ٢<span class="sz">ZIP × ١٠٠</span></a>
+      <a class="dl" href="zips/Artivo_Mockups_Golden-Frame_part3.zip" download>تحميل الموك-أبس — الجزء ٣<span class="sz">ZIP × ١٠٠</span></a>
       <a class="dl" href="previews/MOCKUPS_newstyle_sample.jpg" target="_blank">معاينة الموك-أبس<span class="sz">JPG</span></a>
     </div>
   </div>
 
   <div class="card">
     <h2>👁️ معاينة التصميمات</h2>
-    <p style="color:#b9b2a0;font-size:.9rem;margin-bottom:4px">١٠٠ تصميم كامل (١٠ خلفيات × ١٠ آيات مختلفة) + ١٠ آيات شهيرة إضافية (آية الكرسي والمعوذتين وغيرها):</p>
+    <p style="color:#b9b2a0;font-size:.9rem;margin-bottom:4px">٣٠٠ تصميم كامل بتشكيل عثماني صحيح (١٠ خلفيات × ٣٠ آية مختلفة عن الجنة والرحمة والمغفرة والهداية):</p>
     <img class="prev" src="previews/CONTACT_SHEET_landscape_90.jpg" alt="معاينة بالعرض">
-    <p style="color:#b9b2a0;font-size:.9rem;margin:14px 0 4px">(نفس الشيت: كل التصميمات في شبكة ١٠×١٠)</p>
+    <p style="color:#b9b2a0;font-size:.9rem;margin:14px 0 4px">(كل التصميمات في شبكات حسب الفصيلة)</p>
     <img class="prev" src="previews/CONTACT_SHEET_portrait_210.jpg" alt="معاينة بالطول">
     <img class="prev" src="previews/CONTACT_SHEET_all_300.jpg?v=14" alt="كل التصاميم">
   </div>
@@ -76,12 +78,15 @@
 <script>
 const names={D01:'ليلة القدر',D02:'شمس السماء',D03:'نسيم الصحراء',D04:'أفق الحرم',D05:'محراب الصباح',D06:'محارة الفجر',D07:'قبة الليل',D08:'واحة النور',D09:'بستان الرحمة',D10:'ديوان الجنة'};
 const z=document.getElementById('zips');
+const IND=['١','٢','٣'];
 for(let i=1;i<=10;i++){
   const id='D'+String(i).padStart(2,'0');
-  const a=document.createElement('a');
-  a.className='dl';a.href='zips/Artivo_'+id+'_30-designs.zip';a.setAttribute('download','');
-  a.innerHTML='تصميم '+id+' — '+(names[id]||'')+'<span class="sz">ZIP × ٣٠</span>';
-  z.appendChild(a);
+  for(let p=1;p<=3;p++){
+    const a=document.createElement('a');
+    a.className='dl';a.href='zips/Artivo_'+id+'_part'+p+'.zip';a.setAttribute('download','');
+    a.innerHTML='تصميم '+id+' — '+(names[id]||'')+' — جزء '+IND[p-1]+'<span class="sz">ZIP × ١٠</span>';
+    z.appendChild(a);
+  }
 }
 </script>
 </body>
