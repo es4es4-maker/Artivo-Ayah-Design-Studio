@@ -26,16 +26,16 @@ SEPIA = (120, 74, 30)
 GOLD = (240, 214, 140)
 # plate layout: (fx0, fx1, fy0, fy1, ink)
 CFG = {
- 1:(0.13,0.87, 0.22,0.47, SEPIA),   # sepia mosque portrait (clear band 0.225 pendant - 0.473 minaret)
- 2:(0.10,0.90, 0.40,0.70, GOLD),    # navy portrait, medallion top
- 3:(0.44,0.93, 0.24,0.78, SEPIA),   # cream left vine
- 4:(0.12,0.88, 0.34,0.61, GOLD),    # navy, medallion bottom, fleuron top (tip at 0.33 cleared)
- 5:(0.19,0.81, 0.33,0.75, SEPIA),   # mughal arch (below arch inner curve, inside opening)
- 6:(0.08,0.92, 0.40,0.68, GOLD),    # navy rich, medallion top, rhombus bottom
- 7:(0.15,0.85, 0.46,0.80, GOLD),    # charcoal landscape (clear of side flourishes & ring)
- 8:(0.12,0.88, 0.32,0.70, SEPIA),   # cream double flourish
+ 1:(0.12,0.88, 0.22,0.58, SEPIA),   # sepia mosque portrait (clear band: pendant end at 0.21 to above domes at 0.60)
+ 2:(0.10,0.90, 0.40,0.76, GOLD),    # navy portrait, medallion top
+ 3:(0.44,0.93, 0.22,0.78, SEPIA),   # cream left vine
+ 4:(0.12,0.88, 0.34,0.63, GOLD),    # navy, medallion bottom, fleuron top (tip at 0.33 cleared)
+ 5:(0.18,0.82, 0.33,0.76, SEPIA),   # mughal arch (inside arch opening)
+ 6:(0.08,0.92, 0.40,0.72, GOLD),    # navy rich, medallion top, rhombus bottom
+ 7:(0.13,0.87, 0.46,0.80, GOLD),    # charcoal landscape (clear of side flourishes & ring)
+ 8:(0.12,0.88, 0.32,0.72, SEPIA),   # cream double flourish
  9:(0.10,0.90, 0.46,0.80, SEPIA),   # cream landscape, ring top
- 10:(0.08,0.92, 0.28,0.83, GOLD),   # navy landscape palmette
+ 10:(0.08,0.92, 0.26,0.82, GOLD),   # navy landscape palmette
 }
 DPI300_W, DPI300_H = 7087, 9449  # 60x80cm
 
@@ -44,7 +44,12 @@ DPI300_W, DPI300_H = 7087, 9449  # 60x80cm
 # blit box of every rendered line (same extents draw_line_centered() will
 # paint, padding included) lies fully inside the band. If 12 shrink attempts
 # still fail, the build prints a loud LAYOUT warning and exits non-zero.
-SAFE_BAND = {1:(0.245,0.455), 4:(0.345,0.605), 5:(0.345,0.725), 7:(0.47,0.81)}
+SAFE_BAND = {
+ 1:(0.225, 0.575),   # below pendant (0.21) to above central dome tip
+ 4:(0.345, 0.625),
+ 5:(0.345, 0.740),
+ 7:(0.47,  0.795),
+}
 
 
 def _line_box(text, size, cx, y_center):
@@ -61,8 +66,8 @@ def _line_box(text, size, cx, y_center):
 def _layout_boxes(vtext, caption, plate_id, W, H, zcx, iw, ih, fs_override=None):
     """Return (lines, fs, boxes, y0). boxes=(x0,y0,x1,y1) = exact blit boxes."""
     fx0, fx1, fy0, fy1, ink = CFG[plate_id]
-    fs_cap = fs_override if fs_override else int(ih/6.4)
-    lines, fs = fit_layout(vtext, int(iw*0.94), int(ih*0.72), fs_cap)
+    fs_cap = fs_override if fs_override else int(ih/5.2)
+    lines, fs = fit_layout(vtext, int(iw*0.96), int(ih*0.90), fs_cap)
     cap_fs = int(fs*0.42)
     vh = int(len(lines)*fs*1.52) + cap_fs*2
     if plate_id in SAFE_BAND:
@@ -127,7 +132,7 @@ def build(plate_id, verse, out_path, proof_path=None):
                     f'(top={top / H:.3f}, bot={bot / H:.3f}, band={st}-{sb})')
             print('LAYOUT WARNING:', warn, flush=True)
     else:
-        lines, fs = fit_layout(verse['text'], int(iw*0.94), int(ih*0.72), int(ih/6.4))
+        lines, fs = fit_layout(verse['text'], int(iw*0.96), int(ih*0.90), int(ih/5.2))
         cap_fs = int(fs * 0.42)
         vh = int(len(lines) * fs * 1.52) + cap_fs * 2
         y0 = int((fy0 + fy1) / 2 * H) - vh // 2
